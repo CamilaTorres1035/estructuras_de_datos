@@ -2,6 +2,11 @@
 
 **Estudiante:** Maria Camila Torres Chica
 
+## Requisitos Generales del Entorno
+
+* **Lenguaje:** Python 3.10 o superior.
+* **Dependencias principales:** `numpy`
+
 ## Descripción
 
 En este laboratorio se abordó el reto de crear, almacenar y manipular una matriz de gran escala ($100{,}000 \times 100{,}000$ elementos) de forma optimizada y minimizando el impacto en memoria RAM.
