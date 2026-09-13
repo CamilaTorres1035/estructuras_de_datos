@@ -1,0 +1,19 @@
+MERKLE ROOT FINAL:
+3dee224f83ea08bc55ac2680bb5eced286ab775fca484acc3eafd757bbb71d93
+
+[RAÍZ]
+ └── 3dee224f... (HASH: 3dee224f83ea08bc55ac2680bb5eced286ab775fca484acc3eafd757bbb71d93)
+
+[NODOS INTERMEDIOS]
+ ├── H11: 135b71cf...
+ ├── H12: f350e823...
+
+[HOJAS Y TRANSACCIONES]
+ ├── T1 (Ana paga 150)
+ │    └── Hash H1: 7a18bfdc... (HASH: 7a18bfdcfe365d9598cb789513f9239a6cef11c4d2c2a1a6f32677e64777f97c)
+ ├── T2 (Luis paga 230)
+ │    └── Hash H2: 2f4c9726... (HASH: 2f4c9726fa7bcc9b054a82470b582e2b504b8bd5aae1a4789eaefc76d5a774e1)
+ ├── T3 (Carlos paga 80)
+ │    └── Hash H3: 19b08e51... (HASH: 19b08e517d817544fc0baec4aa06a8c0ba9452be3b3e00c03af62c7c6da9fc46)
+ ├── T4 (Maria paga 95)
+ │    └── Hash H4: c537d0cc... (HASH: c537d0cc84287857e88596f027c7ef63a2b0964c358336495961aef92df264cd)
