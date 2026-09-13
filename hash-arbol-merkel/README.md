@@ -17,9 +17,10 @@ En este módulo se abordan la solución del reto 1 relacionado con hashes y árb
    * **Reducción de Tiempos:** Se logra reducir el tiempo de búsqueda en peor escenario de aproximadamente ~5 minutos a ~18 segundos (probado en CPU de 12 núcleos).
 
 2. **Construcción e Inspección de Árbol de Merkle:**
-   * **Serialización Determinista:** Implementación de `json.dumps` con ordenamiento de claves (`sort_keys=True`) para garantizar consistencia en la generación de hashes por transacción.
-   * **Estructuración Jerárquica:** Agrupamiento y concatenación de pares de hashes hoja hasta converger en una única raíz (*Merkle Root*).
-   * **Manejo de Nodos Impares:** Promoción directa del nodo remanente al siguiente nivel cuando un nivel cuenta con un número impar de nodos.
+   * **Serialización Adaptativa Dinámica:** El árbol soporta cualquier estructura de datos de forma agnóstica. Evalúa si el elemento es un diccionario para aplicar `json.dumps(sort_keys=True)` o si es texto plano/valores simples para procesarlos directamente con `str()`, garantizando consistencia criptográfica en cualquier escenario.
+   * **Matriz como Pila e Inmutabilidad Funcional:** El árbol se almacena internamente como una matriz bidimensional (pila de tuplas). La base (Nivel 0) contiene las hojas iniciales y cada nivel superior se apila hasta converger en la Raíz (*Merkle Root*) en el tope. Al utilizar tuplas anidadas, la estructura queda blindada como de solo lectura (*Readonly*) en tiempo de ejecución.
+   * **Optimización Criptográfica de Nodos Impares:** En lugar de promover nodos sin pareja directamente al siguiente nivel, el sistema implementa el estándar oficial de redes distribuidas (estilo Bitcoin). Si una capa es impar, se duplica el último nodo intermedio antes de emparejar, garantizando niveles pares uniformes y optimizando el bucle de hash.
+   * **Generación y Verificación de Pruebas (Merkle Proofs):** Capacidad de extraer de forma aislada el camino de hashes hermanos (co-ruta) para cualquier transacción y verificar su integridad de manera desacoplada sin necesidad de reconstruir o exponer el árbol completo.
 
 ## Archivos del Repositorio
 
@@ -28,6 +29,7 @@ En este módulo se abordan la solución del reto 1 relacionado con hashes y árb
 | `busqueda.py` | Script interactivo para encontrar la clave de 8 dígitos que genera un hash SHA-256 objetivo utilizando multiprocessing y optimización a nivel de bytes. |
 | `rendimiento.py` | Módulo de benchmark comparativo que evalúa la aceleración ($\text{speedup}$) y la tasa de hashes por segundo ($\text{H/s}$) enfrentando la versión mononúcleo tradicional contra la optimizada. |
 | `problemasHash.ipynb` | Notebook interactivo con la resolución secuencial inicial de la búsqueda de claves y la implementación/dibujado completo del Árbol de Merkle. |
+| `mi_arbol.txt` | Reporte persistente generado automáticamente por la clase `MerkleTree` que exporta el diseño visual jerárquico del árbol, sus niveles intermedios y las transacciones asociadas. |
 
 ## Benchmark y Evidencia de Rendimiento
 
