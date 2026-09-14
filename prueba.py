@@ -75,37 +75,47 @@ BUCKET_HEADER_SIZE = 8                 # 4 bytes (contador) + 4 bytes (overflow_
 def put(mm, key_string, value_string, N, L, s):
     # Calculamos en qué byte del disco cae esta clave
     bucket_index, offset = get_bucket_offset(key_string, N, L, s)
+    current_offset = offset
     
-    # Leemos el encabezado de ese bucket específico
-    mm.seek(offset)
-    bucket_header = mm.read(BUCKET_HEADER_SIZE)
-    count, overflow_ptr = struct.unpack('<II', bucket_header)
-    
-    # Verificamos si hay espacio en la página
-    if count < MAX_RECORDS:
-        # Calculamos el byte exacto donde empieza nuestro espacio libre:
-        # Inicio del bucket + 8 bytes de encabezado + espacio ocupado por registros anteriores
-        record_offset = offset + BUCKET_HEADER_SIZE + (count * RECORD_SIZE)
+    while True:
+        mm.seek(current_offset)
+        count, overflow_ptr = struct.unpack('<II', mm.read(BUCKET_HEADER_SIZE))
         
-        # Empaquetamos los strings forzando el tamaño exacto (padding)
-        key_bytes = key_string.ljust(KEY_SIZE).encode('utf-8')[:KEY_SIZE]
-        val_bytes = value_string.ljust(VAL_SIZE).encode('utf-8')[:VAL_SIZE]
-        
-        # Escribimos el par clave-valor directamente en el disco
-        mm.seek(record_offset)
-        mm.write(key_bytes + val_bytes)
-        
-        # Actualizamos y guardamos el contador del bucket
-        count += 1
-        mm.seek(offset)
-        mm.write(struct.pack('<II', count, overflow_ptr))
-        
-        print(f"[*] Guardado: '{key_string.strip()}' -> Bucket {bucket_index}")
-        
-    else:
-        # COLISIÓN Y DESBORDAMIENTO
-        print(f"[!] Overflow en Bucket {bucket_index} insertando '{key_string}'.")
-        print(f"[!] Es hora de crear una página de overflow y avanzar el split pointer.")
+        # Verificamos si hay espacio en la página
+        if count < MAX_RECORDS:
+            # Calculamos el byte exacto donde empieza nuestro espacio libre:
+            # Inicio del bucket + 8 bytes de encabezado + espacio ocupado por registros anteriores
+            record_offset = current_offset + BUCKET_HEADER_SIZE + (count * RECORD_SIZE)
+            
+            # Empaquetamos los strings forzando el tamaño exacto (padding)
+            key_bytes = key_string.ljust(KEY_SIZE).encode('utf-8')[:KEY_SIZE]
+            val_bytes = value_string.ljust(VAL_SIZE).encode('utf-8')[:VAL_SIZE]
+            
+            # Escribimos el par clave-valor directamente en el disco
+            mm.seek(record_offset)
+            mm.write(key_bytes + val_bytes)
+            
+            # Actualizamos contador
+            count+=1
+            mm.seek(current_offset)
+            mm.write(struct.pack('<II', count, overflow_ptr))
+            
+            ubicacion = f"Bucket {bucket_index}" if current_offset == offset else f"Página de Overflow (offset {current_offset})"
+            print(f"[*] Guardado: '{key_string.strip()}' -> {ubicacion}")
+            return True, current_offset  # retornamos éxito
+            
+        else:
+            # El bloque está lleno. ¿Existe ya una cadena de overflow?
+            if overflow_ptr != 0:
+                # Sí existe, saltamos al siguiente bloque y repetimos el ciclo
+                current_offset = overflow_ptr
+            else:
+                # NO EXISTE
+                # Para evitar conflictos de memoria en Windows al redimensionar un mmap abierto,
+                # en una BD real aquí enviaríamos una señal al proceso principal para que
+                # expanda el archivo, calcule el nuevo offset, y actualice nuestro overflow_ptr.
+                print(f"[!] Necesitamos amarrar una página de overflow en el byte {current_offset} para salvar '{key_string}'.")
+                return False, current_offset # reportamos dónde nos atascamos
 
 def trigger_split(mm, N, L, s):
     print(f"\n[SPLIT] Iniciando división. Split Pointer (s) apunta al Bucket {s}")
@@ -117,8 +127,8 @@ def trigger_split(mm, N, L, s):
     offset_original = HEADER_SIZE + (bucket_original * BUCKET_SIZE)
     offset_nuevo = HEADER_SIZE + (bucket_nuevo * BUCKET_SIZE)
     
-    # (Nota del sistema: En un entorno real de producción, aquí extenderías 
-    # el tamaño del archivo físico y redimensionarías el mmap antes de continuar).
+    # (Nota del sistema: En un entorno real de producción, aquí extenderíaa
+    # el tamaño del archivo físico y redimensionaría el mmap antes de continuar).
     
     # Leer TODOS los registros del bucket original
     mm.seek(offset_original)
@@ -193,6 +203,46 @@ def expand_file_for_new_bucket():
         f.write(b'\x00') # Escribe un byte al final para forzar el crecimiento del archivo
         
     print(f"[DISCO] Archivo expandido a {new_size} bytes.")
+    return current_size # Retornamos el offset de la nueva página creada
+
+def get(mm, key_string, N, L, s):
+    # Calculamos dónde debería estar teóricamente
+    bucket_index, offset = get_bucket_offset(key_string, N, L, s)
+    current_offset = offset
+    
+    # Formateamos la clave a 16 bytes para compararla binariamente
+    target_key_bytes = key_string.ljust(KEY_SIZE).encode('utf-8')[:KEY_SIZE]
+    
+    bloques_leidos = 0
+    
+    # Recorremos la lista enlazada (Algoritmo de Williams)
+    while current_offset != 0:
+        bloques_leidos += 1
+        
+        # Leemos el encabezado del bloque actual
+        mm.seek(current_offset)
+        count, overflow_ptr = struct.unpack('<II', mm.read(BUCKET_HEADER_SIZE))
+        
+        # Buscamos secuencialmente dentro de los registros de esta página
+        for i in range(count):
+            record_offset = current_offset + BUCKET_HEADER_SIZE + (i * RECORD_SIZE)
+            mm.seek(record_offset)
+            registro = mm.read(RECORD_SIZE)
+            
+            key_bytes = registro[:KEY_SIZE]
+            
+            # Match binario
+            if key_bytes == target_key_bytes:
+                val_bytes = registro[KEY_SIZE:]
+                valor = val_bytes.decode('utf-8').strip('\x00').strip()
+                print(f"[SEARCH] '{key_string}' encontrado -> '{valor}' (Lecturas de bloque: {bloques_leidos})")
+                return valor
+                
+        # Si no estaba aquí, seguimos el puntero de desbordamiento
+        current_offset = overflow_ptr
+        
+    print(f"[SEARCH] Clave '{key_string}' no existe en la base de datos.")
+    return None
 
 # simulación
 if __name__ == "__main__":
@@ -230,7 +280,7 @@ if __name__ == "__main__":
             if count >= MAX_RECORDS:
                 print(f"\n[!] Overflow detectado intentando insertar '{key}' en Bucket {bucket_index}")
                 
-                # Expandimos el disco físicamente
+                # Expandimos el disco físicamente para el crecimiento lineal global
                 mm.close()
                 expand_file_for_new_bucket()
                 
@@ -241,7 +291,30 @@ if __name__ == "__main__":
                 N, L, s = trigger_split(mm, N, L, s)
                 
             # Ahora sí, guardamos el dato de forma segura
-            put(mm, key, value, N, L, s)
+            exito, target_offset = put(mm, key, value, N, L, s)
             
+            # NUEVO BLOQUE: Creación de la página de overflow física
+            if not exito:
+                # 1. Expandimos el archivo para crear la página huérfana
+                mm.close()
+                nuevo_offset_overflow = expand_file_for_new_bucket()
+                mm = mmap.mmap(f.fileno(), 0)
+                
+                # 2. Hacemos el "amarre" (escribimos el puntero en el bloque lleno)
+                mm.seek(target_offset)
+                old_count, _ = struct.unpack('<II', mm.read(BUCKET_HEADER_SIZE))
+                mm.seek(target_offset)
+                mm.write(struct.pack('<II', old_count, nuevo_offset_overflow))
+                print(f"[*] Amarre físico realizado: Offset {target_offset} -> apunta a la nueva página {nuevo_offset_overflow}")
+                
+                # 3. Re-intentamos guardar (ahora sí recorrerá la lista enlazada y guardará en la nueva página)
+                put(mm, key, value, N, L, s)
+        
+        print("\n--- INICIANDO LECTURAS ---")
+        get(mm, "isbn_004", N, L, s)  # Una lectura exitosa
+        get(mm, "isbn_009", N, L, s)  # La que se mudó de bucket
+        get(mm, "isbn_999", N, L, s)  # Una lectura de un libro que no existe
+        get(mm, "isbn_008", N, L, s)  # ¡La prueba de fuego del overflow!
+        
         mm.close()
         print("\n--- SIMULACIÓN FINALIZADA ---")
