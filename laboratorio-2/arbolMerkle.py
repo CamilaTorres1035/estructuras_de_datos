@@ -1,3 +1,4 @@
+import os
 import json
 import hashlib
 
@@ -78,18 +79,18 @@ class MerkelTree:
         lineas = []
         lineas.append(f"MERKLE ROOT FINAL:\n{root}\n")
         lineas.append("[RAÍZ]")
-        lineas.append(f" └── {root[:8]}... (HASH: {root})")
+        lineas.append(f" |-- {root[:8]}... (HASH: {root})")
         
         if len(self.matriz) > 2:
             lineas.append("\n[NODOS INTERMEDIOS]")
             for i in range(len(self.matriz) - 2, 0, -1):
                 for idx, h in enumerate(self.matriz[i]):
-                    lineas.append(f" ├── H{i}{idx+1}: {h[:8]}...")
+                    lineas.append(f" +-- H{i}{idx+1}: {h[:8]}...")
         
         lineas.append("\n[HOJAS Y TRANSACCIONES]")
         for i, (tx, h) in enumerate(zip(self.transacciones, hojas), 1):
-            lineas.append(f" ├── T{i} ({tx})")
-            lineas.append(f" │    └── Hash H{i}: {h[:8]}... (HASH: {h})")
+            lineas.append(f" +-- T{i} ({tx})")
+            lineas.append(f" |    |-- Hash H{i}: {h[:8]}... (HASH: {h})")
             
         return "\n".join(lineas)
     
@@ -118,7 +119,7 @@ class MerkleProof:
             hash_actual = sha256(combinado)
         return hash_actual == raiz
 
-# Experimento
+# Experimento (Generado usando Gemini 3.1 Pro)
 if __name__ == "__main__":
     print("=== INICIANDO EXPERIMENTO ÁRBOL DE MERKLE ===\n")
 
@@ -131,11 +132,14 @@ if __name__ == "__main__":
         "Tx5: Eve -> Alice 5 BTC"
     ]
     
+    carpeta_actual = os.path.dirname(os.path.abspath(__file__))
+    ruta_txt = os.path.join(carpeta_actual, "diagrama_arbol.txt")
+    
     # Construir el árbol y mostrar la raíz
     print("--- 1. CONSTRUCCIÓN DEL ÁRBOL ---")
     arbol = MerkelTree(bloques)
     raiz_original = arbol.get_root()
-    arbol.dibujar_y_guardar_arbol("diagrama_arbol.txt")
+    arbol.dibujar_y_guardar_arbol(ruta_txt)
     
     # Modificar un bloque y demostrar que la raíz cambia
     print("--- 2. DEMOSTRACIÓN DE SENSIBILIDAD A CAMBIOS ---")
