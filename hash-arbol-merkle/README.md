@@ -9,7 +9,7 @@
 
 En este módulo se abordan la solución del reto 1 relacionado con hashes y árboles de Merkle usando la búsqueda por fuerza bruta optimizada de claves numéricas de 8 dígitos a partir de su hash SHA-256 y la construcción e inspección jerárquica de un **Árbol de Merkle** (*Merkle Tree*) para la verificación de integridad de transacciones.
 
-### Poblemas Resueltos
+### Problemas Resueltos
 
 1. **Optimización de Búsqueda de clave a partir de su hash:**
    * **Formateo Directo a Bytes:** Se sustituye la conversión lenta `str(i).zfill(8).encode()` por formateo nativo en bytes (`b"%08d"`), eliminando la sobrecarga en recolección de basura e I/O de cadenas.
