@@ -4,3 +4,4 @@
 - **Hash y Árbol de Merkle:** Búsqueda optimizada por fuerza bruta de claves SHA-256 y construcción de Árbol de Merkle. | [Ir a Hash y Árbol de Merkle](./hash-arbol-merkle)
 - **Laboratorio 2:** Implementación de Árbol de Merkle | [Ir al Laboratorio 2](./laboratorio-2)
 - **Árboles de Búsqueda:** Implementación y benchmark de rendimiento entre Listas nativas, ABB y Árboles B+. | [Ir a Árboles](./arboles)
+- **Laboratorio 3:** Sistema de Búsqueda y Organización: Árboles ABB y B+ | [Ir al Laboratorio 3](./laboratorio-3)
