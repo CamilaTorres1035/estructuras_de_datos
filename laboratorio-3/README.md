@@ -31,7 +31,8 @@ El objetivo principal es analizar **cómo escala el rendimiento** de cada estruc
 | `arboles.ipynb` | Notebook principal con: generación de datasets, validación automática, 8 experimentos completos con análisis estadístico riguroso y generación de gráficas. |
 | `estructuras.py` | Módulo Python con las tres estructuras de datos implementadas (ListaNat, ABB, ArbolBPlus) |
 | `graficas/` | Carpeta conteniendo todas las gráficas comparativas de los experimentos (escalabilidad, impacto del orden de inserción, búsquedas por rango, sensibilidad al orden del B+, etc.). |
-| `Informe-Lab-3.pdf` | Informe técnico detallado con metodología experimental, resultados estadísticos (media, desviación estándar, IC 95%, tratamiento de outliers), análisis de complejidad empírica y conclusiones. Generado a partir del Notebook omitiendo bloques de código para una mejor lectura. |
+| `Informe-Lab-3.pdf` | Informe técnico detallado con metodología experimental, resultados estadísticos (media, desviación estándar, IC 95%, tratamiento de outliers), análisis de complejidad empírica y conclusiones. Generado a partir del Notebook omitiendo bloques de código para una mejor lectura. ([Descargar PDF aquí](Informe-Lab-3.pdf?raw=true)) | 
+
 
 ## Metodología Experimental
 
