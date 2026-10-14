@@ -21,6 +21,19 @@ class BoundingBox:
         y_max = self.y_center + (self.height/2.0)
         
         return (x_min <= point.x <= x_max and y_min<= point.y <= y_max)
+    
+    def intersects(self, x_c, y_c, radius):
+        x_min = self.x_center - (self.width/2.0)
+        x_max = self.x_center + (self.width/2.0)
+        y_min = self.y_center - (self.height/2.0)
+        y_max = self.y_center + (self.height/2.0)
+        
+        px = max(x_min, min(x_c, x_max))
+        py = max(y_min, min(y_c, y_max))
+        d2 = (x_c-px)**2 + (y_c-py)**2
+        
+        return d2 <= (radius**2)
+        
 
 class Node:
     def __init__(self, boundary: BoundingBox, capacity: int) -> None:
@@ -81,3 +94,22 @@ class QuadTree:
     
     def insertar(self, point: Point) -> bool:
         return self.root.insertar(point)
+    
+    def range_search(self, x_c: float, y_c: float, radius: float):
+        results: List[Point] = []
+        self._range_search(self.root, x_c, y_c, radius, results)
+        return results
+        
+    def _range_search(self, node:Node, x_c, y_c, radius, results):
+        if not(node.boundary.intersects(x_c, y_c, radius)):
+            return
+        if node.north_w is None:
+            for p in node.points:
+                d2 = (x_c-p.x)**2 + (y_c-p.y)**2
+                if d2 <= radius**2:
+                    results.append(p)
+        else:
+            self._range_search(node.north_w, x_c, y_c, radius, results)
+            self._range_search(node.north_e, x_c, y_c, radius, results)
+            self._range_search(node.south_w, x_c, y_c, radius, results)
+            self._range_search(node.south_e, x_c, y_c, radius, results)
