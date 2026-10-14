@@ -1,6 +1,5 @@
-from cmath import inf, sqrt
-from typing import List, Optional
-
+import math
+from typing import List, Optional, Any
 
 class Point:
     def __init__(self, x:float, y:float) -> None:
@@ -23,30 +22,29 @@ class BoundingBox:
         
         return (x_min <= point.x <= x_max and y_min<= point.y <= y_max)
     
-    def intersects(self, x_c, y_c, radius):
-        x_min = self.x_center - (self.width/2.0)
-        x_max = self.x_center + (self.width/2.0)
-        y_min = self.y_center - (self.height/2.0)
-        y_max = self.y_center + (self.height/2.0)
+    def intersects(self, x_c: float, y_c: float, radius: float) -> bool:
+        x_min = self.x_center - (self.width / 2.0)
+        x_max = self.x_center + (self.width / 2.0)
+        y_min = self.y_center - (self.height / 2.0)
+        y_max = self.y_center + (self.height / 2.0)
         
         px = max(x_min, min(x_c, x_max))
         py = max(y_min, min(y_c, y_max))
-        d2 = (x_c-px)**2 + (y_c-py)**2
+        d2 = (x_c - px)**2 + (y_c - py)**2
         
         return d2 <= (radius**2)
     
-    def distance(self, x_q, y_q):
-        x_min = self.x_center - (self.width/2.0)
-        x_max = self.x_center + (self.width/2.0)
-        y_min = self.y_center - (self.height/2.0)
-        y_max = self.y_center + (self.height/2.0)
+    def distance(self, x_q: float, y_q: float) -> float:
+        x_min = self.x_center - (self.width / 2.0)
+        x_max = self.x_center + (self.width / 2.0)
+        y_min = self.y_center - (self.height / 2.0)
+        y_max = self.y_center + (self.height / 2.0)
         
         px = max(x_min, min(x_q, x_max))
         py = max(y_min, min(y_q, y_max))
         d2 = (x_q-px)**2 + (y_q-py)**2
         
-        return sqrt(d2)
-        
+        return math.sqrt(d2)
 
 class Node:
     def __init__(self, boundary: BoundingBox, capacity: int) -> None:
@@ -58,8 +56,7 @@ class Node:
         self.south_w: Optional['Node'] = None
         self.south_e: Optional['Node'] = None
     
-    def insertar(self, point:Point) -> bool:
-        # Rechazar directamente el punto si no pertenece a este cuadrante
+    def insertar(self, point: Point) -> bool:
         if not self.boundary.contains_point(point):
             return False
         
@@ -88,7 +85,7 @@ class Node:
                 self.south_w.insertar(point) or 
                 self.south_e.insertar(point))
     
-    def _dividir(self):
+    def _dividir(self) -> List[BoundingBox]:
         sub_cuadrantes = []
         sub_width = self.boundary.width/2.0
         sub_height = self.boundary.height/2.0
@@ -99,8 +96,7 @@ class Node:
         sub_cuadrantes.append(BoundingBox(x_center-sub_width/2, y_center-sub_height/2, sub_width, sub_height))
         sub_cuadrantes.append(BoundingBox(x_center+sub_width/2, y_center-sub_height/2, sub_width, sub_height))
         return sub_cuadrantes
-                
-    
+
 class QuadTree:
     def __init__(self, boundary: BoundingBox, capacity: int = 4) -> None:
         self.root = Node(boundary, capacity)
@@ -108,17 +104,18 @@ class QuadTree:
     def insertar(self, point: Point) -> bool:
         return self.root.insertar(point)
     
-    def range_search(self, x_c: float, y_c: float, radius: float):
+    def range_search(self, x_c: float, y_c: float, radius: float) -> List[Point]:
         results: List[Point] = []
         self._range_search(self.root, x_c, y_c, radius, results)
         return results
         
-    def _range_search(self, node:Node, x_c, y_c, radius, results):
-        if not(node.boundary.intersects(x_c, y_c, radius)):
+    def _range_search(self, node: Node, x_c: float, y_c: float, radius: float, results: List[Point]) -> None:
+        if not node.boundary.intersects(x_c, y_c, radius):
             return
+            
         if node.north_w is None:
             for p in node.points:
-                d2 = (x_c-p.x)**2 + (y_c-p.y)**2
+                d2 = (x_c - p.x)**2 + (y_c - p.y)**2
                 if d2 <= radius**2:
                     results.append(p)
         else:
@@ -127,21 +124,22 @@ class QuadTree:
             self._range_search(node.south_w, x_c, y_c, radius, results)
             self._range_search(node.south_e, x_c, y_c, radius, results)
     
-    def nearest_neighbor(self, x_query, y_query):
-        campeon = [None, inf]
+    def nearest_neighbor(self, x_query: float, y_query: float) -> Optional[Point]:
+        campeon: List[Any] = [None, float('inf')]
         self._nearest_neighbor(self.root, x_query, y_query, campeon)
         return campeon[0]
 
-    def _nearest_neighbor(self, node: Node, x_query, y_query, campeon):
+    def _nearest_neighbor(self, node: Node, x_query: float, y_query: float, campeon: List[Any]) -> None:
         d = node.boundary.distance(x_query, y_query)
         if d >= campeon[1]:
             return
+            
         if node.north_w is None:
             for p in node.points:
-                d = sqrt((x_query-p.x)**2 + (y_query - p.y)**2)
-                if d < campeon[1]:
+                d_punto = math.sqrt((x_query - p.x)**2 + (y_query - p.y)**2)
+                if d_punto < campeon[1]:
                     campeon[0] = p
-                    campeon[1] = d
+                    campeon[1] = d_punto
         else:
             hijos = [node.north_w, node.north_e, node.south_w, node.south_e]
             hijos.sort(key=lambda hijo: hijo.boundary.distance(x_query, y_query))
