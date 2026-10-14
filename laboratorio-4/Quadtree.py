@@ -1,3 +1,4 @@
+from cmath import inf, sqrt
 from typing import List, Optional
 
 
@@ -33,6 +34,18 @@ class BoundingBox:
         d2 = (x_c-px)**2 + (y_c-py)**2
         
         return d2 <= (radius**2)
+    
+    def distance(self, x_q, y_q):
+        x_min = self.x_center - (self.width/2.0)
+        x_max = self.x_center + (self.width/2.0)
+        y_min = self.y_center - (self.height/2.0)
+        y_max = self.y_center + (self.height/2.0)
+        
+        px = max(x_min, min(x_q, x_max))
+        py = max(y_min, min(y_q, y_max))
+        d2 = (x_q-px)**2 + (y_q-py)**2
+        
+        return sqrt(d2)
         
 
 class Node:
@@ -113,3 +126,25 @@ class QuadTree:
             self._range_search(node.north_e, x_c, y_c, radius, results)
             self._range_search(node.south_w, x_c, y_c, radius, results)
             self._range_search(node.south_e, x_c, y_c, radius, results)
+    
+    def nearest_neighbor(self, x_query, y_query):
+        campeon = [None, inf]
+        self._nearest_neighbor(self.root, x_query, y_query, campeon)
+        return campeon[0]
+
+    def _nearest_neighbor(self, node: Node, x_query, y_query, campeon):
+        d = node.boundary.distance(x_query, y_query)
+        if d >= campeon[1]:
+            return
+        if node.north_w is None:
+            for p in node.points:
+                d = sqrt((x_query-p.x)**2 + (y_query - p.y)**2)
+                if d < campeon[1]:
+                    campeon[0] = p
+                    campeon[1] = d
+        else:
+            hijos = [node.north_w, node.north_e, node.south_w, node.south_e]
+            hijos.sort(key=lambda hijo: hijo.boundary.distance(x_query, y_query))
+            
+            for hijo in hijos:
+                self._nearest_neighbor(hijo, x_query, y_query, campeon)
