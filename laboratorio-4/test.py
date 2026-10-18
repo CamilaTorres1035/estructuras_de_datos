@@ -2,6 +2,8 @@ import random
 
 from Quadtree import Point, QuadTree, BoundingBox
 from typing import List, Optional, Any
+import matplotlib.pyplot as plt
+import matplotlib.patches as patches
 
 def range_search(puntos:List[Point], x_c:float, y_c:float, radius:float) -> List[Point]:
     results: List[Point] = []
@@ -65,5 +67,28 @@ def test_correctness():
     assert set_quad == set_fb
     
     print("El QuadTree es geométricamente perfecto. Todos los asserts pasaron.")
+    
+    def visualizar_resultados():
+        fig, ax = plt.subplots(figsize=(10, 10))
+        
+        x_list = [p.x for p in listaCoordenadas]
+        y_list = [p.y for p in listaCoordenadas]
+        
+        ax.scatter(x_list, y_list, color='lightgray', s=10)     
+        ax.scatter(queryPoint.x, queryPoint.y, color='red', marker='X', s=50)
+        
+        patch = patches.Circle((queryPoint.x, queryPoint.y), radio, fill=False, color='blue')
+        ax.add_patch(patch)
+        
+        x_list = [p.x for p in rango_quad]
+        y_list = [p.y for p in rango_quad]
+        ax.scatter(x_list, y_list, color='green', s=15)
+        
+        ax.scatter(nn_quad.x, nn_quad.y, color='orange', s=30)
+        ax.plot([nn_quad.x, queryPoint.x], [nn_quad.y, queryPoint.y], color='red', linestyle='--')
+        
+        plt.show()
+    
+    visualizar_resultados()
 
 test_correctness()
