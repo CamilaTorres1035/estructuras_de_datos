@@ -41,6 +41,8 @@ def ejecutar_benchmarking():
     tiempos_nn_fb = []
 
     quiebre_encontrado = False
+    quiebre_rq = None
+    quiebre_nn = None
 
     print("Iniciando Benchmarking...")
     print("-" * 75)
@@ -105,6 +107,12 @@ def ejecutar_benchmarking():
         promedio_nn_fb = ((t_fin - t_inicio) * 1000) / NUM_CONSULTAS
         tiempos_nn_fb.append(promedio_nn_fb)
         
+        # Capturar quiebre dinámico
+        if quiebre_rq is None and promedio_rq_quad < promedio_rq_fb:
+            quiebre_rq = N
+        if quiebre_nn is None and promedio_nn_quad < promedio_nn_fb:
+            quiebre_nn = N
+        
     
         # ANÁLISIS EN CONSOLA Y PUNTO DE QUIEBRE
     
@@ -120,29 +128,48 @@ def ejecutar_benchmarking():
     print("-" * 75)
     print("Generando gráficas de rendimiento...")
     
+    # Paleta de colores
+    color_quad = '#9b59b6'  # Amatista / Morado vibrante
+    color_fb = '#ff66b2'    # Rosa chicle 
+    color_texto = '#4a235a' # Morado oscuro
+    fondo = '#fff0f5'       # Lavender blush 
+    
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 6))
+    fig.patch.set_facecolor(fondo)
     
     # Gráfica 1: Range Search
-    ax1.plot(tamanos, tiempos_rq_quad, label='QuadTree $\mathcal{O}(\log N)$', color='blue', marker='o')
-    ax1.plot(tamanos, tiempos_rq_fb, label='Fuerza Bruta $\mathcal{O}(N)$', color='red', marker='x')
-    ax1.set_title('Búsqueda por Rango (500m)')
-    ax1.set_xlabel('Cantidad de Puntos (N)')
-    ax1.set_ylabel('Tiempo Promedio (ms)')
-    ax1.set_xscale('log') # Escala Logarítmica X
-    ax1.set_yscale('log') # Escala Logarítmica Y
-    ax1.grid(True, which="both", ls="--", alpha=0.5)
-    ax1.legend()
+    ax1.set_facecolor('white')
+    ax1.plot(tamanos, tiempos_rq_quad, label='QuadTree $\mathcal{O}(\log N + K)$', color=color_quad, marker='o', linewidth=2.5)
+    ax1.plot(tamanos, tiempos_rq_fb, label='Fuerza Bruta $\mathcal{O}(N)$', color=color_fb, marker='x', linewidth=2.5)
+    # visualización punto de quiebre
+    if quiebre_rq:
+        ax1.axvline(x=quiebre_rq, color='gray', linestyle=':', alpha=0.8)
+        ax1.text(quiebre_rq * 1.1, min(tiempos_rq_quad), f'← Quiebre (N={quiebre_rq})', color='dimgray', fontsize=9)
+
+    ax1.set_title('Búsqueda por Rango (500m)', color=color_texto, fontweight='bold')
+    ax1.set_xlabel('Cantidad de Puntos (N)', color=color_texto)
+    ax1.set_ylabel('Tiempo Promedio (ms)', color=color_texto)
+    ax1.set_xscale('log') 
+    ax1.set_yscale('log') 
+    ax1.grid(True, which="both", ls="--", alpha=0.4, color='#d8bfd8') # Grid 
+    ax1.legend(facecolor=fondo, edgecolor='#d8bfd8')
 
     # Gráfica 2: Nearest Neighbor
-    ax2.plot(tamanos, tiempos_nn_quad, label='QuadTree $\mathcal{O}(\log N)$', color='blue', marker='o')
-    ax2.plot(tamanos, tiempos_nn_fb, label='Fuerza Bruta $\mathcal{O}(N)$', color='red', marker='x')
-    ax2.set_title('Vecino Más Cercano')
-    ax2.set_xlabel('Cantidad de Puntos (N)')
-    ax2.set_ylabel('Tiempo Promedio (ms)')
-    ax2.set_xscale('log') # Escala Logarítmica X
-    ax2.set_yscale('log') # Escala Logarítmica Y
-    ax2.grid(True, which="both", ls="--", alpha=0.5)
-    ax2.legend()
+    ax2.set_facecolor('white')
+    ax2.plot(tamanos, tiempos_nn_quad, label='QuadTree $\mathcal{O}(\log N)$', color=color_quad, marker='o', linewidth=2.5)
+    ax2.plot(tamanos, tiempos_nn_fb, label='Fuerza Bruta $\mathcal{O}(N)$', color=color_fb, marker='x', linewidth=2.5)
+    # visualización punto de quiebre
+    if quiebre_nn:
+        ax2.axvline(x=quiebre_nn, color='gray', linestyle=':', alpha=0.8)
+        ax2.text(quiebre_nn * 1.1, min(tiempos_nn_quad), f'← Quiebre (N={quiebre_nn})', color='dimgray', fontsize=9)
+    
+    ax2.set_title('Vecino Más Cercano', color=color_texto, fontweight='bold')
+    ax2.set_xlabel('Cantidad de Puntos (N)', color=color_texto)
+    ax2.set_ylabel('Tiempo Promedio (ms)', color=color_texto)
+    ax2.set_xscale('log') 
+    ax2.set_yscale('log') 
+    ax2.grid(True, which="both", ls="--", alpha=0.4, color='#d8bfd8')
+    ax2.legend(facecolor=fondo, edgecolor='#d8bfd8')
 
     plt.tight_layout()
     plt.show()

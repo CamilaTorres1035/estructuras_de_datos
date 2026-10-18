@@ -23,10 +23,10 @@ class BoundingBox:
         return (x_min <= point.x <= x_max and y_min<= point.y <= y_max)
     
     def intersects(self, x_c: float, y_c: float, radius: float) -> bool:
-        x_min = self.x_center - (self.width / 2.0)
-        x_max = self.x_center + (self.width / 2.0)
-        y_min = self.y_center - (self.height / 2.0)
-        y_max = self.y_center + (self.height / 2.0)
+        hw = self.width / 2.0
+        hh = self.height / 2.0
+        x_min, x_max = self.x_center - hw, self.x_center + hw
+        y_min, y_max = self.y_center - hh, self.y_center + hh
         
         px = max(x_min, min(x_c, x_max))
         py = max(y_min, min(y_c, y_max))
@@ -35,14 +35,14 @@ class BoundingBox:
         return d2 <= (radius**2)
     
     def distance(self, x_q: float, y_q: float) -> float:
-        x_min = self.x_center - (self.width / 2.0)
-        x_max = self.x_center + (self.width / 2.0)
-        y_min = self.y_center - (self.height / 2.0)
-        y_max = self.y_center + (self.height / 2.0)
+        hw = self.width / 2.0
+        hh = self.height / 2.0
+        x_min, x_max = self.x_center - hw, self.x_center + hw
+        y_min, y_max = self.y_center - hh, self.y_center + hh
         
         px = max(x_min, min(x_q, x_max))
         py = max(y_min, min(y_q, y_max))
-        d2 = (x_q-px)**2 + (y_q-py)**2
+        d2 = (x_q - px)**2 + (y_q - py)**2
         
         return math.sqrt(d2)
 

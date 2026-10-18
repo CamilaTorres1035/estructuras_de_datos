@@ -29,46 +29,53 @@ def nearest_neighbor_fb(puntos: List[Point], x_query: float, y_query: float) -> 
 
 def visualizar_resultados(listaCoordenadas: List[Point], queryPoint: Point, radio: float, rango_quad: List[Point], nn_quad: Point):
     """Renderiza el mapa de la ciudad con una vista global y una vista con zoom."""
-    # Crear una figura ancha con 1 fila y 2 columnas
+    # Paleta de colores
+    fondo_figura = '#fff0f5'      
+    color_base = '#e8daef'        # Lila pastel para la ciudad
+    color_circulo = '#ff66b2'     # Rosa chicle
+    color_rango = '#9b59b6'       # Amatista (Paquetes encontrados)
+    color_query = "#ff0088"       # Deep pink (Tu ubicación)
+    color_nn = "#e1b60b"          # Dorado (Vecino más cercano)
+    color_texto = '#4a235a'       # Morado oscuro
+
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 8))
+    fig.patch.set_facecolor(fondo_figura)
     
-    # Extraer coordenadas una sola vez para eficiencia
     x_list = [p.x for p in listaCoordenadas]
     y_list = [p.y for p in listaCoordenadas]
     x_rango = [p.x for p in rango_quad]
     y_rango = [p.y for p in rango_quad]
     
-    # Dibujar exactamente lo mismo en AMBOS lienzos simultáneamente
     for ax in (ax1, ax2):
-        # 1. Fondo de ciudad (semitransparente para no saturar)
-        ax.scatter(x_list, y_list, color='lightgray', s=5, alpha=0.5, zorder=1)     
-        
+        ax.set_facecolor('white')
+        # 1. Fondo de ciudad
+        ax.scatter(x_list, y_list, color=color_base, s=5, alpha=0.5, zorder=1)     
         # 2. Círculo de búsqueda
-        patch = patches.Circle((queryPoint.x, queryPoint.y), radio, fill=False, color='blue', linewidth=1.5, zorder=2)
+        patch = patches.Circle((queryPoint.x, queryPoint.y), radio, fill=False, color=color_circulo, linewidth=2, zorder=2)
         ax.add_patch(patch)
-        
         # 3. Puntos encontrados en Range Search
-        ax.scatter(x_rango, y_rango, color='green', s=20, zorder=3)
-        
+        ax.scatter(x_rango, y_rango, color=color_rango, s=25, zorder=3)
         # 4. Punto de consulta (Centro)
-        ax.scatter(queryPoint.x, queryPoint.y, color='red', marker='X', s=80, zorder=4)
-        
+        ax.scatter(queryPoint.x, queryPoint.y, color=color_query, marker='X', s=90, zorder=4)
         # 5. Vecino más cercano y su línea conectora
-        ax.scatter(nn_quad.x, nn_quad.y, color='orange', s=40, zorder=5)
-        ax.plot([nn_quad.x, queryPoint.x], [nn_quad.y, queryPoint.y], color='red', linestyle='--', linewidth=1.5, zorder=6)
+        ax.scatter(nn_quad.x, nn_quad.y, color=color_nn, s=60, zorder=5, edgecolor=color_texto, linewidth=0.5)
+        ax.plot([nn_quad.x, queryPoint.x], [nn_quad.y, queryPoint.y], color=color_circulo, linestyle='--', linewidth=2, zorder=6)
 
-    # --- Configurar Lienzo Izquierdo (Global) ---
-    ax1.set_title(f"Vista Global ({len(listaCoordenadas)} entregas)")
-    ax1.set_aspect('equal') # Para que el círculo no se vea ovalado
+        # Pintar los bordes del recuadro
+        for spine in ax.spines.values():
+            spine.set_color('#d8bfd8')
+
+    # Configuración de textos
+    ax1.set_title(f"Vista Global ({len(listaCoordenadas)} entregas)", color=color_texto, fontweight='bold')
+    ax1.set_aspect('equal')
     
-    # --- Configurar Lienzo Derecho (Zoom) ---
-    ax2.set_title(f"Zoom: Radio de {radio}m")
+    ax2.set_title(f"Zoom: Radio de {radio}m", color=color_texto, fontweight='bold')
     ax2.set_aspect('equal')
-    margen_zoom = radio * 1.5  # Mostrar un poquito más allá del círculo
+    margen_zoom = radio * 1.5
     ax2.set_xlim(queryPoint.x - margen_zoom, queryPoint.x + margen_zoom)
     ax2.set_ylim(queryPoint.y - margen_zoom, queryPoint.y + margen_zoom)
     
-    plt.tight_layout() # Ajusta los márgenes automáticamente
+    plt.tight_layout()
     plt.show()
 
 # PRUEBAS (Unit Testing)
