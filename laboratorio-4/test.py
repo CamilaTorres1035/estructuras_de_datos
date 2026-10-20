@@ -1,9 +1,25 @@
 import random
+random.seed(42) # Reproducibilidad
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 from typing import List, Optional, Any
 
 from Quadtree import Point, QuadTree, BoundingBox
+
+def edge_cases():
+    boundary = BoundingBox(5000, 5000, 10000, 10000)
+    tree = QuadTree(boundary)
+    # árbol vacío
+    assert tree.nearest_neighbor(100, 100) is None
+    assert tree.range_search(100, 100, 500) == []
+    # radio 0 y fuera del mapa
+    p = Point(100, 100)
+    tree.insertar(p)
+    assert len(tree.range_search(100, 100, 0)) == 1
+    assert tree.range_search(99999, 99999, 10) == []
+    # puntos duplicados
+    for _ in range(10): tree.insertar(Point(5000, 5000))
+    assert len(tree.range_search(5000, 5000, 10)) == 10
 
 # ALGORITMOS DE REFERENCIA (Fuerza Bruta)
 

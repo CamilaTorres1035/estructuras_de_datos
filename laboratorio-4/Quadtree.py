@@ -46,10 +46,12 @@ class BoundingBox:
         
         return math.sqrt(d2)
 
+MAX_DEPTH = 20 # Evitar RecursionError
 class Node:
-    def __init__(self, boundary: BoundingBox, capacity: int) -> None:
+    def __init__(self, boundary: BoundingBox, capacity: int, depth: int = 0) -> None:
         self.boundary = boundary
         self.capacity = capacity
+        self.depth = depth
         self.points: List[Point] = []
         self.north_w: Optional['Node'] = None
         self.north_e: Optional['Node'] = None
@@ -60,18 +62,19 @@ class Node:
         if not self.boundary.contains_point(point):
             return False
         
-        # Aun hay espacio y el nodo NO se ha dividido
-        if (len(self.points) < self.capacity and self.north_w is None):
+        # Aun hay espacio o si ya alcanzamos la profundidad máxima, y el nodo NO se ha dividido
+        if (len(self.points) < self.capacity or self.depth >= MAX_DEPTH) and self.north_w is None:
             self.points.append(point)
             return True
         
         # El nodo está lleno, si  NO se ha dividido se divide
         if self.north_w is None:
             s_quad: List[BoundingBox] = self._dividir()
-            self.north_w = Node(s_quad[0], self.capacity)
-            self.north_e = Node(s_quad[1], self.capacity)
-            self.south_w = Node(s_quad[2], self.capacity)
-            self.south_e = Node(s_quad[3], self.capacity)
+            # Al crear hijos, aumentamos la profundidad
+            self.north_w = Node(s_quad[0], self.capacity, self.depth + 1)
+            self.north_e = Node(s_quad[1], self.capacity, self.depth + 1)
+            self.south_w = Node(s_quad[2], self.capacity, self.depth + 1)
+            self.south_e = Node(s_quad[3], self.capacity, self.depth + 1)
             for p in self.points:
                 self._insertar_hijos(p)
             self.points = []
