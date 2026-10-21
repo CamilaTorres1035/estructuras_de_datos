@@ -1,3 +1,4 @@
+import math
 import time
 import random
 import statistics
@@ -155,7 +156,35 @@ def ejecutar_benchmarking():
     print(f"PUNTO DE QUIEBRE Range Search: N ≈ {quiebre_rq}")
     print(f"PUNTO DE QUIEBRE NN Único: N ≈ {quiebre_nn}")
     print(f"PUNTO DE QUIEBRE KNN (K={K}): N ≈ {quiebre_knn} (Tarda más en superar a FB por el overhead de mantener los K mejores)")
-
+    def interpolar_cruce(t_quad, t_fb, tamanos):
+        """Encuentra el N exacto donde las curvas se cruzan por interpolación log-log."""
+        for i in range(len(t_quad) - 1):
+            if t_quad[i] >= t_fb[i] and t_quad[i+1] < t_fb[i+1]:
+                # Interpolación lineal en escala log
+                log_n1, log_n2 = math.log(tamanos[i]), math.log(tamanos[i+1])
+                log_tq1, log_tq2 = math.log(t_quad[i]), math.log(t_quad[i+1])
+                log_tfb1, log_tfb2 = math.log(t_fb[i]), math.log(t_fb[i+1])
+                
+                # Pendientes
+                pend_q = (log_tq2 - log_tq1) / (log_n2 - log_n1)
+                pend_fb = (log_tfb2 - log_tfb1) / (log_n2 - log_n1)
+                
+                # Punto de intersección
+                if abs(pend_q - pend_fb) > 1e-9:
+                    log_n_cruce = log_n1 + (log_tfb1 - log_tq1) / (pend_q - pend_fb)
+                    return math.exp(log_n_cruce)
+        return None  
+    
+    cruce_rq_interp = interpolar_cruce(medianas_rq_quad, medianas_rq_fb, tamanos)
+    cruce_nn_interp = interpolar_cruce(medianas_nn_quad, medianas_nn_fb, tamanos)
+    cruce_knn_interp = interpolar_cruce(medianas_knn_quad, medianas_knn_fb, tamanos)
+    
+    if cruce_rq_interp:
+        print(f"  → Cruce interpolado Range Search: N ≈ {cruce_rq_interp:.0f}")
+    if cruce_nn_interp:
+        print(f"  → Cruce interpolado NN Único: N ≈ {cruce_nn_interp:.0f}")
+    if cruce_knn_interp:
+        print(f"  → Cruce interpolado KNN: N ≈ {cruce_knn_interp:.0f}")     
 
     # VISUALIZACIÓN DE RESULTADOS LOGARÍTMICA
     color_quad = '#9b59b6'  # Amatista / Morado vibrante
@@ -166,13 +195,16 @@ def ejecutar_benchmarking():
     fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(18, 6))
     fig.patch.set_facecolor(fondo)
     
-    def configurar_eje(ax, titulo, t_quad, t_fb, quiebre):
+    def configurar_eje(ax, titulo, t_quad, t_fb, quiebre, label_quad='QuadTree', label_fb='Fuerza Bruta', cruce_interp=None):
         ax.set_facecolor('white')
-        ax.plot(tamanos, t_quad, label='QuadTree', color=color_quad, marker='o', linewidth=2.5)
-        ax.plot(tamanos, t_fb, label='Fuerza Bruta', color=color_fb, marker='x', linewidth=2.5)
+        ax.plot(tamanos, t_quad, label=label_quad, color=color_quad, marker='o', linewidth=2.5)
+        ax.plot(tamanos, t_fb, label=label_fb, color=color_fb, marker='x', linewidth=2.5)
         if quiebre:
             ax.axvline(x=quiebre, color='gray', linestyle=':', alpha=0.8)
-            ax.text(quiebre * 1.1, min(t_quad), f'← Quiebre (N={quiebre})', color='dimgray', fontsize=9)
+            ax.text(quiebre * 1.1, min(t_quad), f'← Cota superior (N={quiebre})', color='dimgray', fontsize=9)
+        if cruce_interp:
+            ax.axvline(x=cruce_interp, color='black', linestyle='--', alpha=0.6)
+            ax.text(cruce_interp * 0.9, max(t_quad), f'Cruce real ≈ {cruce_interp:.0f} →', color='black', fontsize=9, ha='right')
         ax.set_title(titulo, color=color_texto, fontweight='bold')
         ax.set_xlabel('Cantidad de Puntos (N)', color=color_texto)
         ax.set_ylabel('Tiempo Mediano por Consulta (ms)', color=color_texto)
@@ -180,9 +212,12 @@ def ejecutar_benchmarking():
         ax.grid(True, which="both", ls="--", alpha=0.4, color='#d8bfd8')
         ax.legend(facecolor=fondo, edgecolor='#d8bfd8')
     
-    configurar_eje(ax1, 'Búsqueda por Rango (500 m)', medianas_rq_quad, medianas_rq_fb, quiebre_rq)
-    configurar_eje(ax2, 'Vecino Más Cercano (NN único)', medianas_nn_quad, medianas_nn_fb, quiebre_nn)
-    configurar_eje(ax3, f'K-Vecinos Más Cercanos (K={K})', medianas_knn_quad, medianas_knn_fb, quiebre_knn)
+    configurar_eje(ax1, 'Búsqueda por Rango (500 m)', medianas_rq_quad, medianas_rq_fb, quiebre_rq,
+                   r'QuadTree $\mathcal{O}(\log N + K)$', r'Fuerza Bruta $\mathcal{O}(N)$', cruce_rq_interp)
+    configurar_eje(ax2, 'Vecino Más Cercano (NN único)', medianas_nn_quad, medianas_nn_fb, quiebre_nn,
+                   r'QuadTree $\mathcal{O}(\log N)$', r'Fuerza Bruta $\mathcal{O}(N)$', cruce_nn_interp)
+    configurar_eje(ax3, f'K-Vecinos Más Cercanos (K={K})', medianas_knn_quad, medianas_knn_fb, quiebre_knn,
+                   r'QuadTree $\mathcal{O}(\log N + K)$', r'Fuerza Bruta $\mathcal{O}(N \log N)$*', cruce_knn_interp)
     
     fig.suptitle(
         f'Rendimiento comparativo | Mediana de {REPETICIONES} corridas, '
