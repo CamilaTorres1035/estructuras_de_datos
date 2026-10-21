@@ -138,13 +138,13 @@ class QuadTree:
         return campeon[0]
 
     def _nearest_neighbor(self, node: Node, x_query: float, y_query: float, campeon: List[Any]) -> None:
-        d = node.boundary.distance(x_query, y_query)
+        d = node.boundary.distance_squared(x_query, y_query)
         if d >= campeon[1]:
             return
             
         if node.north_w is None:
             for p in node.points:
-                d_punto = math.sqrt((x_query - p.x)**2 + (y_query - p.y)**2)
+                d_punto = (x_query - p.x)**2 + (y_query - p.y)**2
                 if d_punto < campeon[1]:
                     campeon[0] = p
                     campeon[1] = d_punto
@@ -156,10 +156,7 @@ class QuadTree:
                 self._nearest_neighbor(hijo, x_query, y_query, campeon)
 
     def k_nearest_neighbors(self, x_query:float, y_query:float, k: int = 5) -> List[Point]:
-        """
-        Encuentra los K vecinos más cercanos
-        Retorna una lista de puntos ordenados por cercanía
-        """
+        """Encuentra los K vecinos más cercanos. Retorna lista ordenada por cercanía."""
         campeon: List[Tuple[float, Point]] = []
         self._k_nearest(self.root, x_query, y_query, k, campeon)
         # Ordenamos por distancia (menor a mayor) y extraemos solo los puntos
