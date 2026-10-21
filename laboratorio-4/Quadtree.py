@@ -1,5 +1,5 @@
 import math
-from typing import List, Optional, Any
+from typing import List, Optional, Any, Tuple
 
 class Point:
     def __init__(self, x:float, y:float) -> None:
@@ -23,11 +23,13 @@ class BoundingBox:
         return (x_min <= point.x <= x_max and y_min<= point.y <= y_max)
     
     def intersects(self, x_c: float, y_c: float, radius: float) -> bool:
+        """Verifica si el círculo de búsqueda intersecta la caja delimitadora (se utiliza en Range Search)"""
         hw = self.width / 2.0
         hh = self.height / 2.0
         x_min, x_max = self.x_center - hw, self.x_center + hw
         y_min, y_max = self.y_center - hh, self.y_center + hh
         
+        # Punto más cercano en la caja al centro del círculo
         px = max(x_min, min(x_c, x_max))
         py = max(y_min, min(y_c, y_max))
         d2 = (x_c - px)**2 + (y_c - py)**2
@@ -35,6 +37,11 @@ class BoundingBox:
         return d2 <= (radius**2)
     
     def distance(self, x_q: float, y_q: float) -> float:
+        """Distancia euclidiana real (solo para usar si se necesita el valor exacto)"""
+        return math.sqrt(self.distance_squared(x_q, y_q))
+    
+    def distance_squared(self, x_q: float, y_q: float) -> float:
+        """Distacia euclidiana al cuadrado para optimizar el costo en CPU"""
         hw = self.width / 2.0
         hh = self.height / 2.0
         x_min, x_max = self.x_center - hw, self.x_center + hw
@@ -42,11 +49,9 @@ class BoundingBox:
         
         px = max(x_min, min(x_q, x_max))
         py = max(y_min, min(y_q, y_max))
-        d2 = (x_q - px)**2 + (y_q - py)**2
-        
-        return math.sqrt(d2)
+        return (x_q - px)**2 + (y_q - py)**2
 
-MAX_DEPTH = 20 # Evitar RecursionError
+MAX_DEPTH = 20 # límite de profundidad para evitar RecursionError con datos duplicados
 class Node:
     def __init__(self, boundary: BoundingBox, capacity: int, depth: int = 0) -> None:
         self.boundary = boundary
@@ -62,12 +67,12 @@ class Node:
         if not self.boundary.contains_point(point):
             return False
         
-        # Aun hay espacio o si ya alcanzamos la profundidad máxima, y el nodo NO se ha dividido
+        # Si aun hay espacio o si ya alcanzamos la profundidad máxima, y el nodo NO se ha dividido
         if (len(self.points) < self.capacity or self.depth >= MAX_DEPTH) and self.north_w is None:
             self.points.append(point)
             return True
         
-        # El nodo está lleno, si  NO se ha dividido se divide
+        # El nodo está lleno y  NO se ha dividido se divide
         if self.north_w is None:
             s_quad: List[BoundingBox] = self._dividir()
             # Al crear hijos, aumentamos la profundidad
@@ -149,3 +154,41 @@ class QuadTree:
             
             for hijo in hijos:
                 self._nearest_neighbor(hijo, x_query, y_query, campeon)
+
+    def k_nearest_neighbors(self, x_query:float, y_query:float, k: int = 5) -> List[Point]:
+        """
+        Encuentra los K vecinos más cercanos
+        Retorna una lista de puntos ordenados por cercanía
+        """
+        campeon: List[Tuple[float, Point]] = []
+        self._k_nearest(self.root, x_query, y_query, k, campeon)
+        # Ordenamos por distancia (menor a mayor) y extraemos solo los puntos
+        campeon.sort(key=lambda x: x[0])
+        return [p for d2, p in campeon]
+        
+    def _k_nearest(self, node: Node, x_q: float, y_q: float, k: int, campeon: List[Tuple[float, Point]]) -> None:
+        d = node.boundary.distance_squared(x_q, y_q)
+        
+        # Si ya tenemos K vecinos, y la caja actual está más lejos 
+        # que nuestro "peor" vecino actual, descartamos todo el subárbol
+        if len(campeon) == k:
+            worst_d2 = max(c[0] for c in campeon)
+            if d >= worst_d2:
+                return
+        
+        if node.north_w is None:
+            for p in node.points:
+                d2 = (x_q - p.x)**2 + (y_q - p.y)**2
+                if len(campeon) < k:
+                    campeon.append((d2, p))
+                else:
+                    worst_d2 = max(c[0] for c in campeon)
+                    if d2 < worst_d2:
+                        worst_idx = max(range(len(campeon)), key=lambda i: campeon[i][0])
+                        campeon[worst_idx] = (d2, p)
+        else:
+            # Explorar primero los cuadrantes geométricamente más cercanos
+            hijos = [node.north_w, node.north_e, node.south_w, node.south_e]
+            hijos.sort(key=lambda h: h.boundary.distance_squared(x_q, y_q))
+            for hijo in hijos:
+                self._k_nearest(hijo, x_q, y_q, k, campeon)
