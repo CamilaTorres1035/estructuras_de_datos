@@ -78,14 +78,14 @@ def visualizar_resultados(listaCoordenadas: List[Point], queryPoint: Point, radi
     for ax in (ax1, ax2):
         ax.set_facecolor('white')
         # 1. Fondo de ciudad
-        ax.scatter(x_list, y_list, color=color_base, s=5, alpha=0.5, zorder=1)     
+        ax.scatter(x_list, y_list, color=color_base, s=5, alpha=0.5, zorder=1, label='Puntos del Dataset')
         # 2. Círculo de búsqueda
-        patch = patches.Circle((queryPoint.x, queryPoint.y), radio, fill=False, color=color_circulo, linewidth=2, zorder=2)
+        patch = patches.Circle((qp.x, qp.y), rad, fill=False, color=color_circulo, linewidth=2, zorder=2, label=f'Radio de Búsqueda ({rad}m)')
         ax.add_patch(patch)
         # 3. Puntos encontrados en Range Search
-        ax.scatter(x_rango, y_rango, color=color_rango, s=25, zorder=3)
+        ax.scatter(x_rango, y_rango, color=color_rango, s=25, zorder=3, label='Puntos en Rango (Range Search)')
         # 4. Punto de consulta (Centro)
-        ax.scatter(queryPoint.x, queryPoint.y, color=color_query, marker='X', s=90, zorder=4)
+        ax.scatter(qp.x, qp.y, color=color_query, marker='X', s=90, zorder=4, label='Punto de Consulta')
         # 5. Dibujar K-vecinos.
         for nn in knn_quad:
             is_primary = (nn.x == nn_quad.x and nn.y == nn_quad.y)
@@ -93,8 +93,8 @@ def visualizar_resultados(listaCoordenadas: List[Point], queryPoint: Point, radi
             lw = 2.5 if is_primary else 1.0
             alpha = 1.0 if is_primary else 0.6
             
-            ax.scatter(nn.x, nn.y, color=color_nn, s=size, zorder=5, edgecolor=color_texto, linewidth=0.5, alpha=alpha)
-            ax.plot([nn.x, queryPoint.x], [nn.y, queryPoint.y], color=color_circulo, linestyle='--', linewidth=lw, alpha=alpha, zorder=6)
+            ax.scatter(nn.x, nn.y, color=color_nn, s=60, zorder=5, edgecolor=color_texto, linewidth=0.5, label='Vecino Más Cercano (1-NN)')
+            ax.plot([nn.x, qp.x], [nn.y, qp.y], color=color_circulo, linestyle='--', linewidth=1.5, zorder=4)
 
         # Pintar los bordes del recuadro
         for spine in ax.spines.values():
