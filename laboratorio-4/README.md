@@ -79,14 +79,14 @@ Misma idea que el vecino más cercano, pero se mantienen los K mejores candidato
 ### Verificación Visual de Consultas Espaciales
 
 *(A la izquierda: mapeo de 10.000 entregas y la zona de consulta. A la derecha: ampliación al radio de 500 m).*
-![Verificación Visual](/Gráficas/Figure_1.png)
+![Verificación Visual](graficas\Figure_1.png)
 
 ## Análisis de Rendimiento (Benchmarking)
 
 Para garantizar resultados rigurosos, se realizaron pruebas de estrés escalando el tamaño del conjunto de datos en una escala logarítmica: $N \in \{10, 50, 100, 500, 1.000, 5.000, 10.000, 50.000, 100.000\}$. En cada $N$ se hicieron **8 corridas** (con puntos y consultas nuevos), cada una con **100 consultas** aleatorias; se reporta la **mediana** del tiempo promedio por consulta, para reducir el ruido de una sola medición. Ambos enfoques están escritos en Python puro, de modo que la comparación mide el efecto de la estructura.
 
 *(Curvas de tiempo promedio: QuadTree vs Fuerza Bruta. Escala log-log para comparar complejidad $\mathcal{O}(\log N)$ vs $\mathcal{O}(N)$. El asterisco en la leyenda del panel de K-NN se explica en la nota debajo de la tabla de resultados).*
-![Gráficas de Rendimiento](/Gráficas/Figure_2.png)
+![Gráficas de Rendimiento](graficas\Figure_2.png)
 
 ### Punto de quiebre
 
@@ -121,7 +121,7 @@ A partir de los experimentos realizados, se determinó que **el QuadTree empieza
 \* La fuerza bruta de K-NN ordena todas las distancias ($\mathcal{O}(N \log N)$), por lo que las aceleraciones de K-NN son una cota superior. El baseline óptimo sería $\mathcal{O}(N)$ con un heap de tamaño $K$.
 
 *(Registro en consola del benchmarking, con el detalle de cota superior y cruce interpolado).*
-![Métricas en Consola](/Gráficas/Resultados_Análisis.png)
+![Métricas en Consola](graficas\Resultados_Análisis.png)
 
 ### Desempeño a Escala Logística ($N = 10.000$)
 
