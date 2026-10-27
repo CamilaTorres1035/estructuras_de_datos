@@ -21,7 +21,7 @@ python analisis.py   # benchmark + Figure_2
 | `Quadtree.py` | Implementación desde cero: `Point`, `BoundingBox`, `Node`, `QuadTree` (inserción, `range_search`, `nearest_neighbor`, `k_nearest_neighbors`). Solo usa `math` y `typing`. |
 | `test.py` | Casos borde, pruebas de correctitud contra fuerza bruta (200 consultas) y verificación visual. |
 | `analisis.py` | Benchmark (mediana de 8 corridas), cruces interpolados y gráficas de rendimiento. |
-| `Gráficas/` | `Figure_1.png` (verificación visual), `Figure_2.png` (rendimiento), `Resultados_Análisis.png` (salida de consola del benchmark). |
+| `graficas/` | `Figure_1.png` (verificación visual), `Figure_2.png` (rendimiento), `Resultados_Analisis.png` (salida de consola del benchmark). |
 
 ## Descripción del Proyecto
 
@@ -33,7 +33,7 @@ El sistema está diseñado para responder eficientemente a tres requerimientos:
 
 1. **Búsqueda por Rango (Range Search):** ¿Qué puntos de entrega están a un radio exacto de 500 metros desde un punto de consulta dado?
 2. **Vecino Más Cercano (Nearest Neighbor):** ¿Cuál es el punto de entrega más cercano a una ubicación dada?
-3. **K vecinos más cercanos (K-NN):** ¿cuáles es son los k puntos de entrega más cercanos a una ubicación dada?
+3. **K vecinos más cercanos (K-NN):** ¿cuáles son los k puntos de entrega más cercanos a una ubicación dada?
 
 ## Diseño Algorítmico y Complejidad Espacial
 
@@ -90,7 +90,7 @@ Para garantizar resultados rigurosos, se realizaron pruebas de estrés escalando
 
 ### Punto de quiebre
 
-A partir de los experimentos realizados, se determinó que **el QuadTree empieza a ser más rápido que la fuerza bruta desde unas decenas hasta pocos cientos de puntos**, según la consulta. El *cruce real* se obtiene interpolando en escala log-log entre los dos puntos de la grilla que lo contienen, y la *cota superior* es el primer $N$ probado donde el QuadTree ya gana.
+A partir de los experimentos realizados, se determinó que **el QuadTree empieza a ser más rápido que la fuerza bruta desde unas decenas hasta pocos cientos de puntos**, según la consulta. El *Cruce interpolado* se obtiene interpolando en escala log-log entre los dos puntos de la grilla que lo contienen, y la *cota superior* es el primer $N$ probado donde el QuadTree ya gana.
 
 | Consulta | Cota superior (grilla) | Cruce interpolado |
 | :--- | ---: | ---: |
@@ -121,7 +121,7 @@ A partir de los experimentos realizados, se determinó que **el QuadTree empieza
 \* La fuerza bruta de K-NN ordena todas las distancias ($\mathcal{O}(N \log N)$), por lo que las aceleraciones de K-NN son una cota superior. El baseline óptimo sería $\mathcal{O}(N)$ con un heap de tamaño $K$.
 
 *(Registro en consola del benchmarking, con el detalle de cota superior y cruce interpolado).*
-![Métricas en Consola](graficas/Resultados_Análisis.png)
+![Métricas en Consola](graficas/Resultados_Analisis.png)
 
 ### Desempeño a Escala Logística ($N = 10.000$)
 
@@ -148,11 +148,11 @@ El QuadTree es una estructura adecuada para consultas espaciales en dos dimensio
 
 ## Notas aclaratorias
 
-Durante el desarrollo de este laboratorio se usarón herramientas de inteligencia artificial (Claude (Sonnet 5.5) y Qwen3.7-plus) como apoyo para:
+Durante el desarrollo de este laboratorio se usaron herramientas de inteligencia artificial (Claude (Sonnet 5.5) y Qwen3.7-plus) como apoyo para:
 
 * consultar conceptos
 * verificar implementaciones
 * revisar la redacción y la interpretación de los resultados
-* código de gráficación
+* código de graficación
 
 Los resultados reportados provienen de la ejecución de `test.py` y `analisis.py`, incluidos en este repositorio.

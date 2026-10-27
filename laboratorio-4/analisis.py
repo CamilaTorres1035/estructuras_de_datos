@@ -204,7 +204,7 @@ def ejecutar_benchmarking():
             ax.text(quiebre * 1.1, min(t_quad), f'← Cota superior (N={quiebre})', color='dimgray', fontsize=9)
         if cruce_interp:
             ax.axvline(x=cruce_interp, color='black', linestyle='--', alpha=0.6)
-            ax.text(cruce_interp * 0.9, max(t_quad), f'Cruce real ≈ {cruce_interp:.0f} →', color='black', fontsize=9, ha='right')
+            ax.text(cruce_interp * 0.9, max(t_quad), f'Cruce interpolado ≈ {cruce_interp:.0f} →', color='black', fontsize=9, ha='right')
         ax.set_title(titulo, color=color_texto, fontweight='bold')
         ax.set_xlabel('Cantidad de Puntos (N)', color=color_texto)
         ax.set_ylabel('Tiempo Mediano por Consulta (ms)', color=color_texto)
